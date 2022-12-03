@@ -37,9 +37,24 @@ int main()
 
 	sprite.setTextureRect(IntRect(0, 0, 18, 18));
 
+	// Переменная для горизонтального перемещения тетрамино
+	int dx = 0;
+	bool rotate = false; // переменная для вращения тетрамино
+
+	// Переменные для таймера и задержки
+	float timer = 0, delay = 0.3;
+
+	// Часы (таймер)
+	Clock clock;
+
 	// Главный цикл приложения: выполняется, пока открыто окно
 	while (window.isOpen())
 	{
+		// Получаем время, прошедшее с начала отсчета, и конвертируем его в секунды
+		float time = clock.getElapsedTime().asSeconds();
+		clock.restart();
+		timer += time;
+
 		// Обрабатываем события в цикле
 		Event event;
 		while (window.pollEvent(event))
@@ -48,14 +63,55 @@ int main()
 			if (event.type == Event::Closed)
 				// тогда закрываем его
 				window.close();
+
+			if (event.type == Event::KeyPressed)
+				// Эта кнопка – стрелка вверх?
+				if (event.key.code == Keyboard::Up) 
+					rotate = true;
+				// Или может стрелка влево?
+				else if (event.key.code == Keyboard::Left) 
+					dx = -1;
+				// Или стрелка вправо?
+				else if (event.key.code == Keyboard::Right) 
+					dx = 1;
+		}
+
+		for (int i = 0; i < 4; i++) 
+			a[i].x += dx;
+
+		// Вращение
+		if (rotate)
+		{
+			Point p = a[1]; // указываем центр вращения
+			for (int i = 0; i < 4; i++)
+			{
+				int x = a[i].y - p.y; // y - y0
+				int y = a[i].x - p.x; // x - x0
+				a[i].x = p.x - x;
+				a[i].y = p.y + y;
+			}
+		}
+
+		// Движение тетрамино вниз («тик» таймера)
+		if (timer > delay)
+		{
+			for (int i = 0; i < 4; i++) 
+				a[i].y += 1;
+			timer = 0;
 		}
 
 		int n = 3; // задаем тип тетрамино
-		for (int i = 0; i < 4; i++)
+		// Первое появление тетрамино на поле?
+		if (a[0].x == 0)
 		{
-			a[i].x = figures[n][i] % 2;
-			a[i].y = figures[n][i] / 2;
+			for (int i = 0; i < 4; i++)
+			{
+				a[i].x = figures[n][i] % 2;
+				a[i].y = figures[n][i] / 2;
+			}
 		}
+		dx = 0;
+		rotate = false;
 
 		// Установка цвета фона - белый
 		window.clear(Color::White);
@@ -64,7 +120,7 @@ int main()
 		for (int i = 0; i < 4; i++)
 		{
 			// Устанавливаем позицию каждого кусочка тетрамино
-			sprite.setPosition(a[i].x * 18, a[i].y * 18);
+			sprite.setPosition(a[i].x * 18.0f, a[i].y * 18.0f);
 			// Отрисовка спрайта
 			window.draw(sprite);
 		}
